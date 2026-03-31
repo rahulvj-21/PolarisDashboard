@@ -66,7 +66,7 @@ export const SummaryGridContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 12px;
+  margin-top: 12px;
 
   @media (max-width: 980px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -183,6 +183,9 @@ export const SectionDivider = styled.div`
 export const AlertsListContainer = styled.div`
   display: grid;
   gap: 10px;
+  max-height: 1000px;
+  overflow-y: auto;
+  padding-right: 4px;
 `
 
 export const AlertListItemButton = styled.button<{ $selected: boolean; $tone: 'warn' | 'bad' }>`
@@ -216,6 +219,49 @@ export const AlertMetaText = styled.div`
 export const EmptyStateText = styled.div`
   padding: 14px;
   color: ${({ theme }) => theme.color.text3};
+  font-size: 13px;
+`
+
+export const ShowMoreButton = styled.button`
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => theme.color.border};
+  background: rgba(255, 255, 255, 0.03);
+  color: ${({ theme }) => theme.color.text2};
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.06s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+`
+
+export const SelectedAlertCard = styled.div`
+  height: 88px;
+  margin-right: 4px;
+  border: 1px solid rgba(124, 92, 255, 0.35);
+  border-radius: ${({ theme }) => theme.radius.m};
+  background: linear-gradient(180deg, rgba(124, 92, 255, 0.16), rgba(24, 213, 255, 0.08));
+  padding: 10px 12px;
+  box-sizing: border-box;
+`
+
+export const SelectedAlertTitle = styled.div`
+  color: ${({ theme }) => theme.color.text};
+  font-weight: 780;
+  letter-spacing: 0.2px;
+`
+
+export const SelectedAlertMetaText = styled.div`
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
 `
 

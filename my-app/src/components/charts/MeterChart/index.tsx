@@ -113,7 +113,7 @@ export function MeterChart({ data, meters, chartType, highlightRange, leakageInt
               x2={alert.endTs}
               ifOverflow="extendDomain"
               fill={theme.color.bad}
-              fillOpacity={0.08}
+              fillOpacity={0.16}
               strokeOpacity={0}
             />
           ))}
@@ -124,8 +124,10 @@ export function MeterChart({ data, meters, chartType, highlightRange, leakageInt
               x2={highlightRange.endTs}
               ifOverflow="extendDomain"
               fill={highlightRange.kind === 'leakage' ? theme.color.bad : theme.color.accent}
-              fillOpacity={highlightRange.kind === 'leakage' ? 0.18 : 0.16}
-              strokeOpacity={0}
+              fillOpacity={highlightRange.kind === 'leakage' ? 0.34 : 0.3}
+              stroke={highlightRange.kind === 'leakage' ? theme.color.bad : theme.color.accent}
+              strokeOpacity={0.7}
+              strokeWidth={1.5}
             />
           ) : null}
 

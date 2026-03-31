@@ -20,6 +20,9 @@ import {
   PageGridContainer,
   PanelCard,
   SectionDivider,
+  SelectedAlertCard,
+  SelectedAlertMetaText,
+  SelectedAlertTitle,
   StatCard,
   StatHintText,
   StatLabelText,
@@ -27,6 +30,7 @@ import {
   StatValueText,
   SubtitleText,
   SummaryGridContainer,
+  ShowMoreButton,
   TitleBlockContainer,
   TitleText,
 } from './styledComponents'
@@ -73,6 +77,7 @@ export function VisualizeScreen() {
   const [startLocal, setStartLocal] = useState<string>('')
   const [endLocal, setEndLocal] = useState<string>('')
   const [activeAlertId, setActiveAlertId] = useState<string | null>(null)
+  const [showAllAlerts, setShowAllAlerts] = useState(false)
 
   const effectiveStartLocal = useMemo(() => startLocal || (meta ? toDateTimeLocalValue(meta.minTs) : ''), [meta, startLocal])
   const effectiveEndLocal = useMemo(() => endLocal || (meta ? toDateTimeLocalValue(meta.maxTs) : ''), [endLocal, meta])
@@ -103,13 +108,14 @@ export function VisualizeScreen() {
   }, [activeAlertId, derivedData])
 
   const highlightRange = useMemo(() => {
+    if (!config.alertsEnabled) return undefined
     if (!activeAlert) return undefined
     return {
       startTs: activeAlert.startTs,
       endTs: activeAlert.endTs,
       kind: activeAlert.kind === 'LEAKAGE_OVER' ? ('leakage' as const) : ('focus' as const),
     }
-  }, [activeAlert])
+  }, [activeAlert, config.alertsEnabled])
 
   const chartData: MeteringSeriesPoint[] = derivedData?.data ?? []
 
@@ -141,36 +147,6 @@ export function VisualizeScreen() {
         </CardHeaderContainer>
         <CardBodyContainer>
           {state.status === 'error' ? <EmptyStateText>Failed to load CSV. {state.message}</EmptyStateText> : null}
-
-          <SummaryGridContainer aria-label="Summary">
-            <StatCard>
-              <StatLabelText>Window</StatLabelText>
-              <StatValueRow>
-                <StatValueText>{kpis.windowLabel}</StatValueText>
-                <StatHintText>{windowMs ? 'selected' : '—'}</StatHintText>
-              </StatValueRow>
-            </StatCard>
-            <StatCard>
-              <StatLabelText>Samples shown</StatLabelText>
-              <StatValueRow>
-                <StatValueText>{kpis.shownSamples}</StatValueText>
-                <StatHintText>{state.status === 'ready' ? 'points' : '—'}</StatHintText>
-              </StatValueRow>
-            </StatCard>
-            <StatCard>
-              <StatLabelText>Meters</StatLabelText>
-              <StatValueRow>
-                <StatValueText>{kpis.metersLabel}</StatValueText>
-              </StatValueRow>
-            </StatCard>
-            <StatCard $tone={kpis.tone}>
-              <StatLabelText>Alerts</StatLabelText>
-              <StatValueRow>
-                <StatValueText>{config.alertsEnabled ? kpis.alertsAll : '—'}</StatValueText>
-                <StatHintText>{config.alertsEnabled ? `${kpis.alertsLeakage} leakage` : 'disabled'}</StatHintText>
-              </StatValueRow>
-            </StatCard>
-          </SummaryGridContainer>
 
           <FiltersContainer aria-label="Filters">
             <FieldLabel>
@@ -264,6 +240,36 @@ export function VisualizeScreen() {
           ) : (
             <EmptyStateText>Loading…</EmptyStateText>
           )}
+
+          <SummaryGridContainer aria-label="Summary">
+            <StatCard>
+              <StatLabelText>Window</StatLabelText>
+              <StatValueRow>
+                <StatValueText>{kpis.windowLabel}</StatValueText>
+                <StatHintText>{windowMs ? 'selected' : '—'}</StatHintText>
+              </StatValueRow>
+            </StatCard>
+            <StatCard>
+              <StatLabelText>Samples shown</StatLabelText>
+              <StatValueRow>
+                <StatValueText>{kpis.shownSamples}</StatValueText>
+                <StatHintText>{state.status === 'ready' ? 'points' : '—'}</StatHintText>
+              </StatValueRow>
+            </StatCard>
+            <StatCard>
+              <StatLabelText>Meters</StatLabelText>
+              <StatValueRow>
+                <StatValueText>{kpis.metersLabel}</StatValueText>
+              </StatValueRow>
+            </StatCard>
+            <StatCard $tone={kpis.tone}>
+              <StatLabelText>Alerts</StatLabelText>
+              <StatValueRow>
+                <StatValueText>{config.alertsEnabled ? kpis.alertsAll : '—'}</StatValueText>
+                <StatHintText>{config.alertsEnabled ? `${kpis.alertsLeakage} leakage` : 'disabled'}</StatHintText>
+              </StatValueRow>
+            </StatCard>
+          </SummaryGridContainer>
         </CardBodyContainer>
       </PanelCard>
 
@@ -276,11 +282,31 @@ export function VisualizeScreen() {
           {derivedData ? <SubtitleText>{derivedData.alerts.all.length} active windows</SubtitleText> : <SubtitleText>—</SubtitleText>}
         </CardHeaderContainer>
         <CardBodyContainer>
+          {config.alertsEnabled ? (
+            <>
+              <SelectedAlertCard>
+                <SelectedAlertTitle>Selected alert</SelectedAlertTitle>
+                {activeAlert && derivedData ? (
+                  <>
+                    <SelectedAlertMetaText>{derivedData.alerts.formatRange(activeAlert)}</SelectedAlertMetaText>
+                    <SelectedAlertMetaText>
+                      Points: {activeAlert.points} • Peak: {Math.round(activeAlert.peakValue)}W at{' '}
+                      {new Date(activeAlert.peakTs).toLocaleString()}
+                    </SelectedAlertMetaText>
+                  </>
+                ) : (
+                  <SelectedAlertMetaText>Select an alert to see the details</SelectedAlertMetaText>
+                )}
+              </SelectedAlertCard>
+              <SectionDivider />
+            </>
+          ) : null}
+          
           {!config.alertsEnabled ? (
             <EmptyStateText>Turn alerts on in Configuration to see summaries and click-to-highlight.</EmptyStateText>
           ) : derivedData && derivedData.alerts.all.length > 0 ? (
             <AlertsListContainer>
-              {derivedData.alerts.all.slice(0, 14).map((a) => {
+              {(showAllAlerts ? derivedData.alerts.all : derivedData.alerts.all.slice(0, 14)).map((a) => {
                 const selected = a.id === activeAlertId
                 const tone = a.kind === 'LEAKAGE_OVER' ? 'bad' : 'warn'
                 const label = a.kind === 'LEAKAGE_OVER' ? 'Leakage' : 'Total power'
@@ -306,19 +332,12 @@ export function VisualizeScreen() {
             <EmptyStateText>No alerts in the selected window.</EmptyStateText>
           )}
 
-          {config.alertsEnabled && activeAlert && derivedData ? (
-            <>
-              <SectionDivider />
-              <div>
-                <TitleText>Selected alert</TitleText>
-                <SubtitleText style={{ marginTop: 6 }}>{derivedData.alerts.formatRange(activeAlert)}</SubtitleText>
-                <SubtitleText style={{ marginTop: 6 }}>
-                  Points: {activeAlert.points} • Peak: {Math.round(activeAlert.peakValue)}W at{' '}
-                  {new Date(activeAlert.peakTs).toLocaleString()}
-                </SubtitleText>
-              </div>
-            </>
+          {config.alertsEnabled && derivedData && derivedData.alerts.all.length > 14 ? (
+            <ShowMoreButton type="button" onClick={() => setShowAllAlerts((prev) => !prev)}>
+              {showAllAlerts ? 'Show Recent 14 alerts' : 'Show all alerts'}
+            </ShowMoreButton>
           ) : null}
+
         </CardBodyContainer>
       </PanelCard>
     </PageGridContainer>
